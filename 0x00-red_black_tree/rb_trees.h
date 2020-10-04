@@ -13,14 +13,15 @@
 	(GETPARENT(node)->left)) : \
 	NULL)
 #define GETUNCLE(node) GETSIBLING(GETPARENT(node))
-#define WHATEVERNODE(node_found) (\
-	node_found->parent ? \
-	node_found->parent : \
-	(node_found->left ? \
-	node_found->left : \
-	(node_found->right ? \
-	node_found->right : \
-	NULL)))
+#define D_BLACK(node, succesor) \
+	((succesor == NULL || \
+	succesor->color == BLACK) && \
+	(node->color == BLACK))
+#define SIBLING_RED(sibling) \
+	((sibling->left && \
+	sibling->left == RED) || \
+	(sibling->right && \
+	sibling->right == RED))
 
 /**
  * enum rb_color_e - Possible color of a Red-Black tree

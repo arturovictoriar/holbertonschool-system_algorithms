@@ -1,7 +1,5 @@
 #include "rb_trees.h"
 
-void DeleteCase1(rb_tree_t *n);
-
 /**
  * rotate - rote a segment of a Btree
  * @node: node to rotate
@@ -52,141 +50,44 @@ void rotate(rb_tree_t *node, int left_or_right)
 	rot_new->parent = parent;
 }
 
-void ReplaceNode(rb_tree_t *n, rb_tree_t *child)
+/**
+ * rb_replace_node - select the succesor node who replace the delete node
+ * @node: node to delete
+ * Return: a pointer to the susccesor node, NULL otherwise
+ */
+rb_tree_t *rb_replace_node(rb_tree_t *node)
 {
-	child->parent = n->parent;
+	rb_tree_t *temp = NULL;
 
-	if (n == n->parent->left)
-		n->parent->left = child;
+	if (node->left && node->right)
+	{
+		temp = node->right;
+		while (temp->left)
+			temp = temp->left;
+		return (temp);
+	}
+
+	if (!node->left && !node->right)
+		return (NULL);
+
+	if (node->left)
+		return (node->left);
 	else
-		n->parent->right = child;
+		return (node->right);
 }
 
-void DeleteCase6(rb_tree_t *n)
-{
-	rb_tree_t *s = GETSIBLING(n);
-
-	s->color = n->parent->color;
-	n->parent->color = BLACK;
-
-	if (n == n->parent->left)
-	{
-		s->right->color = BLACK;
-		rotate(n->parent, 0);
-	}
-	else
-	{
-		s->left->color = BLACK;
-		rotate(n->parent, 1);
-	}
-}
-
-void DeleteCase5(rb_tree_t *n)
-{
-	rb_tree_t *s = GETSIBLING(n);
-
-	if (s->color == BLACK)
-	{
-		if ((n == n->parent->left) && (s->right->color == BLACK) &&
-			(s->left->color == RED))
-		{
-			s->color = RED, s->left->color = BLACK;
-			rotate(s, 1);
-		}
-		else if ((n == n->parent->right) && (s->left->color == BLACK) &&
-				 (s->right->color == RED))
-		{
-			s->color = RED, s->right->color = BLACK;
-			rotate(s, 0);
-		}
-	}
-	DeleteCase6(n);
-}
-
-void DeleteCase4(rb_tree_t *n)
-{
-	rb_tree_t *s = GETSIBLING(n);
-
-	if ((n->parent->color == RED) && (s->color == BLACK) &&
-		(s->left->color == BLACK) && (s->right->color == BLACK))
-	{
-		s->color = RED;
-		n->parent->color = BLACK;
-	}
-	else
-		DeleteCase5(n);
-}
-
-void DeleteCase3(rb_tree_t *n)
-{
-	rb_tree_t *s = GETSIBLING(n);
-
-	if ((n->parent->color == BLACK) && (s->color == BLACK) &&
-		(s->left->color == BLACK) && (s->right->color == BLACK))
-	{
-		s->color = RED;
-		DeleteCase1(n->parent);
-	}
-	else
-		DeleteCase4(n);
-}
-
-void DeleteCase2(rb_tree_t *n)
-{
-	rb_tree_t *s = GETSIBLING(n);
-
-	if (s->color == RED)
-	{
-		n->parent->color = RED;
-		s->color = BLACK;
-		if (n == n->parent->left)
-			rotate(n->parent, 0);
-		else
-			rotate(n->parent, 1);
-	}
-	DeleteCase3(n);
-}
-
-void DeleteCase1(rb_tree_t *n)
-{
-	if (n->parent != NULL)
-		DeleteCase2(n);
-}
-
-void DeleteOneChild(rb_tree_t *n)
-{
-	rb_tree_t *child = (n->right == NULL) ? n->left : n->right;
-	/* assert(child); */
-
-	ReplaceNode(n, child);
-	if (n->color == BLACK)
-	{
-		if (child->color == RED)
-			child->color = BLACK;
-		else
-			DeleteCase1(child);
-	}
-	free(n);
-}
-
-rb_tree_t *two_child_nodes_change(rb_tree_t *node)
-{
-	rb_tree_t *min_val = node->right;
-
-	/* loop down to find the leftmost leaf */
-	while (min_val && min_val->left != NULL)
-		min_val = min_val->left;
-
-	node->n = min_val->n;
-	return min_val;
-}
-
+/**
+ * search_value_in_tree - check if a number is in the RB_tree
+ * @root: root node of the RED-BLACK tree
+ * @n: number to search
+ * Return: the pointer to the node who contain n
+ */
 rb_tree_t *search_value_in_tree(rb_tree_t *root, int n)
 {
 	rb_tree_t *node = NULL;
 
 	if (!root)
-		return NULL;
+		return (NULL);
 
 	if (n < root->n)
 		node = search_value_in_tree(root->left, n);
@@ -196,6 +97,136 @@ rb_tree_t *search_value_in_tree(rb_tree_t *root, int n)
 		return (root);
 
 	return (node);
+}
+
+/**
+ * sibling_is_red - fix RB_tree when the sibling is red
+ * @sibling: deleted node's sibling
+ * @parent: deleted node's parent
+ * Return: nothing
+ */
+void sibling_is_red(rb_tree_t *sibling, rb_tree_t *parent)
+{
+	if (sibling->left && sibling->left->color == RED)
+	{
+		if (sibling->parent->left == sibling)
+		{
+			sibling->left->color = sibling->color;
+			sibling->color = parent->color;
+			rotate(parent, 1);
+		}
+		else
+		{
+			sibling->left->color = parent->color;
+			rotate(sibling, 1);
+			rotate(parent, 0);
+		}
+	}
+	else
+	{
+		if (sibling->parent->left == sibling)
+		{
+			sibling->right->color = parent->color;
+			rotate(sibling, 0);
+			rotate(parent, 1);
+		}
+		else
+		{
+			sibling->right->color = sibling->color;
+			sibling->color = parent->color;
+			rotate(parent, 0);
+		}
+	}
+	parent->color = BLACK;
+}
+
+/**
+ * fix_double_black - fix the RB-tree after a node deletion of a node black
+ * @node: node to fix the double black
+ * Return: nothing
+ */
+void fix_double_black(rb_tree_t *node)
+{
+	rb_tree_t *sibling = GETSIBLING(node), *parent = node->parent;
+
+	if (!GETPARENT(node))
+		return;
+	if (!sibling)
+		fix_double_black(parent);
+	else
+	{
+		if (sibling->color == RED)
+		{
+			parent->color = RED, sibling->color = BLACK;
+			if (sibling->parent->left == sibling)
+				rotate(parent, 1);
+			else
+				rotate(parent, 0);
+			fix_double_black(node);
+		}
+		else
+		{
+			if (SIBLING_RED(sibling))
+				sibling_is_red(sibling, parent);
+			else
+			{
+				sibling->color = RED;
+				if (parent->color == BLACK)
+					fix_double_black(parent);
+				else
+					parent->color = BLACK;
+			}
+		}
+	}
+}
+
+/**
+ * rb_delete_node - delete a node of a RED-BLACK tree
+ * @node: node to delete
+ * Return: a pointer of the tree for letting search the new root, NULL otherw
+ */
+rb_tree_t *rb_delete_node(rb_tree_t *node)
+{
+	rb_tree_t *succesor = rb_replace_node(node), *parent = GETPARENT(node);
+	int double_black = D_BLACK(node, succesor), temp = 0;
+
+	if (!succesor)
+	{
+		if (parent)
+		{
+			if (double_black)
+				fix_double_black(node);
+			else if (GETSIBLING(node))
+				GETSIBLING(node)->color = RED;
+			if (parent->left == node)
+				parent->left = NULL;
+			else
+				parent->right = NULL;
+		}
+		free(node);
+		return (parent ? parent : NULL);
+	} else if (!node->left || !node->right)
+	{
+		if (!GETPARENT(node))
+		{
+			node->n = succesor->n, node->left = node->right = NULL;
+			free(succesor);
+			return (node);
+		}
+		if (node->parent->left == node)
+			parent->left = succesor;
+		else
+			parent->right = succesor;
+		free(node);
+		succesor->parent = parent;
+		if (double_black)
+			fix_double_black(succesor);
+		else
+			succesor->color = BLACK;
+		return (succesor);
+	}
+	temp = node->n, node->n = succesor->n, succesor->n = temp;
+	return (rb_delete_node(succesor));
 }
 
 /**
@@ -213,39 +244,12 @@ rb_tree_t *rb_tree_remove(rb_tree_t *root, int n)
 	node_found = search_value_in_tree(root, n);
 	if (!node_found)
 		return (root);
-	new_root = WHATEVERNODE(node_found);
 
-	if (!node_found->left && !node_found->right)
-	{
-		if (node_found->parent->left == node_found)
-			node_found->parent->left = NULL;
-		else
-			node_found->parent->right = NULL;	
-		free(node_found);
-	}
-	else if ((!node_found->left && node_found->right) ||
-			 (node_found->left && !node_found->right))
-		DeleteOneChild(node_found);
-	else
-	{
-		node_found = two_child_nodes_change(node_found);
-		new_root = WHATEVERNODE(node_found);
-		if (!node_found->left && !node_found->right)
-		{
-			if (node_found->parent->left == node_found)
-				node_found->parent->left = NULL;
-			else
-				node_found->parent->right = NULL;	
-			free(node_found);
-		}
-		else if ((!node_found->left && node_found->right) ||
-				 (node_found->left && !node_found->right))
-			DeleteOneChild(node_found);
-	}
-	printf("%d \n", new_root->n);
+	new_root = rb_delete_node(node_found);
+
 	if (!new_root)
 		return (NULL);
 	while (GETPARENT(new_root))
 		new_root = GETPARENT(new_root);
-	return new_root;
+	return (new_root);
 }
