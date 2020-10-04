@@ -13,14 +13,14 @@
 	(GETPARENT(node)->left)) : \
 	NULL)
 #define GETUNCLE(node) GETSIBLING(GETPARENT(node))
-#define WHATEVERNODE(node_found) \
+#define WHATEVERNODE(node_found) (\
 	node_found->parent ? \
 	node_found->parent : \
 	(node_found->left ? \
 	node_found->left : \
 	(node_found->right ? \
 	node_found->right : \
-	NULL))
+	NULL)))
 
 /**
  * enum rb_color_e - Possible color of a Red-Black tree
