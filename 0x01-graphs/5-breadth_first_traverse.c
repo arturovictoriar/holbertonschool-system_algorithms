@@ -94,7 +94,7 @@ size_t breadth_first_traverse(const graph_t *graph,
 	char len_gra[2048] = {0};
 	size_t depth_n = 0, max_depth = 0;
 
-	if (!graph)
+	if (!graph || !action)
 		return (0);
 
 	cp_ve_header = graph->vertices;
