@@ -65,6 +65,7 @@ size_t depth_first_traverse(const graph_t *graph,
 				max_depth = depth_n;
 		}
 		cp_ve_header = cp_ve_header->next;
+		break;
 	}
 	return (max_depth);
 }
