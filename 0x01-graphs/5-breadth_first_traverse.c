@@ -18,11 +18,13 @@ size_t recur_traverse(vertex_t *cp_ve_header, char *len_gra, size_t depth,
 	if (!cp_ve_header)
 		return (0);
 	cp_ed_header = cp_ve_header->edges;
-	if (!cp_ed_header)
-		return (0);
 	if (depth != m_depth)
+	{
+		if (!cp_ed_header)
+			return (0);
 		return (recur_traverse(cp_ed_header->dest,
 							   len_gra, depth + 1, m_depth, action));
+	}
 
 	while (cp_ed_header)
 	{
