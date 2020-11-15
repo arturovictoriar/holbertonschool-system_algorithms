@@ -46,7 +46,7 @@ size_t depth_first_traverse(const graph_t *graph,
 							void (*action)(const vertex_t *v, size_t depth))
 {
 	vertex_t *cp_ve_header = NULL;
-	char len_gra[1024] = {0};
+	char len_gra[2048] = {0};
 	size_t depth_n = 0, max_depth = 0;
 
 	if (!graph || !action)
