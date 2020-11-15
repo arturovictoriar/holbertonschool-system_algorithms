@@ -60,7 +60,7 @@ int graph_add_edge(graph_t *graph, const char *src, const char *dest,
 	vertex_t *cp_ver_head = NULL, *src_v = NULL, *dest_v = NULL;
 	edge_t *new_e1 = NULL, *new_e2 = NULL;
 
-	if (!graph || !strcmp(src, dest) ||
+	if (!graph || !src || !dest || !strcmp(src, dest) ||
 		(type != BIDIRECTIONAL && type != UNIDIRECTIONAL))
 		return (0);
 	cp_ver_head = graph->vertices;
