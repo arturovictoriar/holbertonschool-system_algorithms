@@ -43,7 +43,7 @@ vertex_t *graph_add_vertex(graph_t *graph, const char *str)
 {
 	vertex_t *cp_ver_head = NULL, *new_v = NULL;
 
-	if (!graph)
+	if (!graph || !str)
 		return (NULL);
 
 	cp_ver_head = graph->vertices;
