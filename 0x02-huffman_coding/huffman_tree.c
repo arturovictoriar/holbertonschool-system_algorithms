@@ -17,19 +17,14 @@ binary_tree_node_t *huffman_tree(char *data, size_t *freq, size_t size)
 	if (!new_heap)
 		return (NULL);
 
-	while (new_heap->root && new_heap->size > 1)
+	while (new_heap->size > 1)
 	{
 		if (!huffman_extract_and_insert(new_heap))
 			return (NULL);
 	}
 
-	if (new_heap->root)
-	{
-		root = (binary_tree_node_t *) new_heap->root->data;
-		free(new_heap->root);
-		free(new_heap);
-		return (root);
-	}
-
-	return (NULL);
+	root = new_heap->root->data;
+	free(new_heap->root);
+	free(new_heap);
+	return (root);
 }
