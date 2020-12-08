@@ -1,7 +1,7 @@
 #include "graphs.h"
 
 /**
- * free_q - frees a queue
+ * free_q - free a queue
  * @queue: queue pointer
  */
 void free_q(queue_t *queue)
@@ -19,7 +19,7 @@ void free_q(queue_t *queue)
 }
 
 /**
- * push - pushe a node in queue
+ * push - push a node in queue
  * @queue: pointer of queue
  * @vertex: pointer of vertex
  * @depth: deep of vertex
@@ -71,9 +71,9 @@ int pop(queue_t *queue, vertex_t **vertex, size_t *depth)
 }
 
 /**
- * breadth_first_traverse - BFS
- * @graph: pointer to graph object
- * @action: pointer to traverse function
+ * breadth_first_traverse - Breadth-first search
+ * @graph: graph pointer
+ * @action: pointer funciton to print the action
  * Return: max depth
  */
 size_t breadth_first_traverse(const graph_t *graph,
@@ -88,12 +88,15 @@ size_t breadth_first_traverse(const graph_t *graph,
 
 	if (!graph || !action || !graph->nb_vertices)
 		return (0);
+
 	queue = calloc(1, sizeof(queue_t));
 	if (!queue)
 		return (0);
+
 	len_gra[graph->vertices->index] = 1;
 	push(queue, graph->vertices, 0);
-	while (queue->size)
+
+	for (; queue->size ;)
 	{
 		for (i = 0, size_q = queue->size; i < size_q; i++)
 		{
