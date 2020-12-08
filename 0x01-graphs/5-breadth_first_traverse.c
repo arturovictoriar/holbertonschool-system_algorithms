@@ -9,7 +9,7 @@ void free_q(queue_t *queue)
 	node_t *node, *node_temp;
 
 	node = queue->head;
-	while (queue->size > 0)
+	while (node)
 	{
 		node_temp = node;
 		node = node->next;
@@ -29,7 +29,7 @@ int push(queue_t *queue, vertex_t *vertex, size_t depth)
 {
 	node_t *node;
 
-	node = malloc(sizeof(node_t));
+	node = calloc(1, sizeof(node_t));
 	if (!node)
 		return (free_q(queue), 0);
 
