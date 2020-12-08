@@ -1,120 +1,115 @@
 #include "graphs.h"
 
 /**
- * recur_traverse - breadth first traverse with recursive, look for all nodes
- * @cp_ve_header: vertix header
- * @len_gra: lenght of the graph
- * @depth: current detph
- * @m_depth: max detph of traverse
- * @action: function pointer which print an the current value node
- * Return: the deepest depth on success or 0 otherwise
+ * free_q - frees a queue
+ * @queue: queue pointer
  */
-size_t recur_traverse(vertex_t *cp_ve_header, char *len_gra, size_t depth,
-					  size_t m_depth, void (*action)(const vertex_t *v, size_t depth))
+void free_q(queue_t *queue)
 {
-	size_t flag = 0;
-	edge_t *cp_ed_header = NULL;
+	node_t *node, *node_temp;
 
-	if (!cp_ve_header)
-		return (0);
-	cp_ed_header = cp_ve_header->edges;
-	if (depth != m_depth)
+	node = queue->head;
+	while (queue->size > 0)
 	{
-		if (!cp_ed_header)
-			return (0);
-		return (recur_traverse(cp_ed_header->dest,
-							   len_gra, depth + 1, m_depth, action));
+		node_temp = node;
+		node = node->next;
+		free(node_temp);
 	}
-
-	while (cp_ed_header)
-	{
-		if (len_gra[cp_ed_header->dest->index] == 0)
-		{
-			action(cp_ed_header->dest, depth);
-			len_gra[cp_ed_header->dest->index] = 1;
-			flag = 1;
-		}
-		cp_ed_header = cp_ed_header->next;
-	}
-	if (!flag)
-		return (0);
-	return (depth);
+	free(queue);
 }
 
 /**
- * iter_traverse - breadth first traverse with iteration, iterate each edge
- * @cp_ve_header: vertix header
- * @len_gra: lenght of the graph
- * @action: function pointer which print an the current value node
- * Return: the deepest depth on success or 0 otherwise
+ * push - pushe a node in queue
+ * @queue: pointer of queue
+ * @vertex: pointer of vertex
+ * @depth: deep of vertex
+ * Return: 1 on success, 0 otherwise
  */
-size_t iter_traverse(vertex_t *cp_ve_header, char *len_gra,
-					 void (*action)(const vertex_t *v, size_t depth))
+int push(queue_t *queue, vertex_t *vertex, size_t depth)
 {
-	size_t depth_n = 0, max_depth = 0, flag = 0, flag_e = 1, i = 2;
-	edge_t *cp_ed_header = NULL;
+	node_t *node;
 
-	cp_ed_header = cp_ve_header->edges;
-	while (cp_ed_header)
-	{
-		if (len_gra[cp_ed_header->dest->index] == 0)
-		{
-			action(cp_ed_header->dest, 1);
-			len_gra[cp_ed_header->dest->index] = 1;
-			flag = 1;
-		}
-		cp_ed_header = cp_ed_header->next;
-	}
-	if (flag)
-		max_depth = 1;
-	while (flag_e != 0)
-	{
-		flag_e = 0;
-		cp_ed_header = cp_ve_header->edges;
-		while (cp_ed_header)
-		{
-			depth_n = recur_traverse(cp_ed_header->dest, len_gra, 2, i, action);
-			if (depth_n > max_depth)
-				max_depth = depth_n;
-			if (depth_n > 0)
-				flag_e = 1;
-			cp_ed_header = cp_ed_header->next;
-		}
-		i++;
-	}
-	return (max_depth);
+	node = malloc(sizeof(node_t));
+	if (!node)
+		return (free_q(queue), 0);
+
+	node->vertex = vertex, node->depth = depth;
+
+	if (!queue->tail)
+		queue->tail = queue->head = node;
+	else
+		queue->tail->next = node, queue->tail = node;
+
+	queue->size++;
+	return (1);
 }
 
 /**
- * breadth_first_traverse - run through a graph using breadth first traverse
- * @graph: the graph struct
- * @action: function pointer which print an the current value node
- * Return: the deepest depth on success or 0 otherwise
+ * pop - pop a node from head of queue
+ * @queue: queue pointer
+ * @vertex: vertex pointer
+ * @depth: depth of vertex
+ * Return: 1 on success, 0 otherwise
+ */
+int pop(queue_t *queue, vertex_t **vertex, size_t *depth)
+{
+	node_t *node;
+
+	if (!queue || !queue->head)
+		return (0);
+
+	node = queue->head, queue->head = queue->head->next;
+
+	if (!queue->head)
+		queue->tail = NULL;
+
+	*vertex = node->vertex, queue->size--, *depth = node->depth;
+
+	free(node);
+
+	return (1);
+}
+
+/**
+ * breadth_first_traverse - BFS
+ * @graph: pointer to graph object
+ * @action: pointer to traverse function
+ * Return: max depth
  */
 size_t breadth_first_traverse(const graph_t *graph,
-							  void (*action)(const vertex_t *v, size_t depth))
+	void (*action)(const vertex_t *v, size_t depth))
 {
-	vertex_t *cp_ve_header = NULL;
+	queue_t *queue = NULL;
+	vertex_t *node_vertex = NULL;
+	edge_t *edge = NULL;
+	size_t max_depth = 0, node_depth = 0;
+	size_t i = 0, size_q = 0;
 	char len_gra[2048] = {0};
-	size_t depth_n = 0, max_depth = 0;
 
-	if (!graph || !action)
+	if (!graph || !action || !graph->nb_vertices)
 		return (0);
-
-	cp_ve_header = graph->vertices;
-
-	while (cp_ve_header)
+	queue = calloc(1, sizeof(queue_t));
+	if (!queue)
+		return (0);
+	len_gra[graph->vertices->index] = 1;
+	push(queue, graph->vertices, 0);
+	while (queue->size)
 	{
-		if (len_gra[cp_ve_header->index] == 0)
+		for (i = 0, size_q = queue->size; i < size_q; i++)
 		{
-			action(cp_ve_header, 0);
-			len_gra[cp_ve_header->index] = 1;
-			depth_n = iter_traverse(cp_ve_header, len_gra, action);
-			if (depth_n > max_depth)
-				max_depth = depth_n;
+			pop(queue, &node_vertex, &node_depth);
+			action(node_vertex, node_depth);
+			max_depth = max_depth > node_depth ? max_depth : node_depth;
+			for (edge = node_vertex->edges; edge; edge = edge->next)
+			{
+				if (len_gra[edge->dest->index])
+					continue;
+				len_gra[edge->dest->index] = 1;
+				if (!push(queue, edge->dest, node_depth + 1))
+					return (0);
+			}
 		}
-		cp_ve_header = cp_ve_header->next;
-		break;
 	}
+	free_q(queue);
 	return (max_depth);
 }
