@@ -3,16 +3,16 @@
 
 /**
  * free_list_unvisited_visited - free all the memory allocated
- * @list_ver: list of visited vertices
+ * @list_h: list of visited vertices
  * @unvisited: queue of unvisited vertices
  * @visited: queue of visited vertices
  * @path: queue of path from start to target
  * Return: Nothing
  */
-void free_list_unvisited_visited(char *list_ver, queue_t *unvisited,
+void free_list_unvisited_visited(a_start_t *list_h, queue_t *unvisited,
 		queue_t *visited, queue_t *path)
 {
-	free(list_ver);
+	free(list_h);
 	queue_delete(unvisited);
 	queue_delete(visited);
 	if (!path->front)
@@ -25,7 +25,7 @@ void free_list_unvisited_visited(char *list_ver, queue_t *unvisited,
  * @v: vertice with the information to save in path
  * Return: 1 on success, 0 otherwise
  */
-int make_path(queue_t *p, vertex_t *v)
+int make_path(queue_t *p, a_start_t *v)
 {
 	char *s = NULL;
 
@@ -42,14 +42,14 @@ int make_path(queue_t *p, vertex_t *v)
  * @neighbor: Pointer edge wich store the vertice wished
  * Return: A pointer node queue with the verticed found in unvisited
  */
-queue_node_t *find_node_queue(queue_t *unvisited, edge_t *neighbor)
+queue_node_t *find_node_queue(queue_t *unvisited, a_start_t *neighbor)
 {
 	queue_node_t *front = NULL;
 
 	front = unvisited->front;
 	while (front)
 	{
-		if (((vertex_t *) front->ptr)->index == neighbor->dest->index)
+		if (((vertex_t *) front->ptr)->index == neighbor->index)
 			break;
 		front = front->next;
 	}
@@ -58,55 +58,55 @@ queue_node_t *find_node_queue(queue_t *unvisited, edge_t *neighbor)
 }
 
 /**
-* dijkstra_algo - dijkstra algoritm applied on graph
-* @start: start vertice
-* @target: target vertice
-* @visited: queue of visited vertices
-* @unvisited: queue of unvisited vertices
-* @list_ver: list of vertices visited
-* Return: a vertex pointer with the target vertice
-*/
-vertex_t *dijkstra_algo(vertex_t *start, vertex_t *target, queue_t *visited,
-		queue_t *unvisited, char *list_ver)
+ * dijkstra_algo - dijkstra algoritm applied on graph
+ * @start: start vertice
+ * @target: target vertice
+ * @visited: queue of visited vertices
+ * @unvisited: queue of unvisited vertices
+ * @list_h: list of vertices visited
+ * Return: a vertex pointer with the target vertice
+ */
+a_start_t *dijkstra_algo(a_start_t *start, a_start_t *target, queue_t *visited,
+		queue_t *unvisited, a_start_t *list_h)
 {
-	vertex_t *visiting = start;
+	a_start_t *visiting = start, *node = NULL;
 	edge_t *neighbors = NULL;
 	queue_node_t *node_q = NULL;
-	int x = 0;
+	int parent = 0;
 	void *c_ptr = NULL;
 
-	for (visiting->y = 0; visiting;)
+	for (visiting->distance = 0; visiting;)
 	{
 		printf("Checking %s, distance from %s is %d\n", visiting->content,
-				start->content, visiting->y);
+				start->content, visiting->distance);
 		if (visiting->index == target->index)
 			break;
-		list_ver[visiting->index] = '1', neighbors = visiting->edges;
+		visiting->visited = '1', neighbors = visiting->edges;
 		for (node_q = NULL; neighbors; node_q = NULL, neighbors = neighbors->next)
 		{
-			if ((list_ver[neighbors->dest->index] == '0') &&
-					((neighbors->dest->y > (visiting->y + neighbors->weight)) ||
-					 (neighbors->dest->y == -1)))
+			node = &(list_h[neighbors->dest->index]);
+			if ((node->visited == '0') &&
+					((node->distance > (visiting->distance + neighbors->weight)) ||
+					 (node->distance == -1)))
 			{
-				x = neighbors->dest->x;
-				neighbors->dest->x = visiting->index;
-				neighbors->dest->y = visiting->y + neighbors->weight;
-				if (x == -1)
-					node_q = queue_push_back(unvisited, (void *) neighbors->dest);
+				parent = node->parent, node->parent = visiting->index;
+				node->distance = visiting->distance + neighbors->weight;
+				node->cost_path = node->distance + node->heuristic;
+				if (parent == -1)
+					node_q = queue_push_back(unvisited, (void *) node);
 				else
-					node_q = find_node_queue(unvisited, neighbors);
+					node_q = find_node_queue(unvisited, node);
 			}
 			while (node_q && node_q->prev &&
-					((vertex_t *) node_q->prev->ptr)->y > ((vertex_t *) node_q->ptr)->y)
+					(((a_start_t *) node_q->prev->ptr)->cost_path >
+					 ((a_start_t *) node_q->ptr)->cost_path))
 			{
-				c_ptr = node_q->prev->ptr;
-				node_q->prev->ptr = node_q->ptr;
-				node_q->ptr = c_ptr;
-				node_q = node_q->prev;
+				c_ptr = node_q->prev->ptr, node_q->prev->ptr = node_q->ptr;
+				node_q->ptr = c_ptr, node_q = node_q->prev;
 			}
 		}
 		queue_push_front(visited, (void *) visiting);
-		visiting = (vertex_t *) dequeue(unvisited);
+		visiting = (a_start_t *) dequeue(unvisited);
 	}
 	return (visiting);
 }
@@ -123,42 +123,41 @@ queue_t *dijkstra_graph(graph_t *graph, vertex_t const *start,
 {
 	queue_t *path = NULL, *unvisited = NULL, *visited = NULL;
 	queue_node_t *front_q = NULL;
-	vertex_t *visiting = NULL, *all_vertices = NULL;
-	char *list_ver = NULL;
+	vertex_t *all_v = NULL;
+	a_start_t *list_h = NULL, *visiting = NULL;
 	size_t i = 0;
-	int x = 0;
+	int parent = 0;
 
-	list_ver = calloc(graph->nb_vertices, sizeof(char));
-	for (i = 0; i < graph->nb_vertices; i++)
-		list_ver[i] = '0';
+	list_h = calloc(graph->nb_vertices, sizeof(a_start_t));
+	for (all_v = graph->vertices; all_v; all_v = all_v->next)
+	{
+		i = all_v->index;
+		list_h[i].parent = -1, list_h[i].distance = -1, list_h[i].heuristic = -1;
+		list_h[i].index = all_v->index, list_h[i].content = all_v->content;
+		list_h[i].x = all_v->x, list_h[i].y = all_v->y, list_h[i].cost_path = -1;
+		list_h[i].edges = all_v->edges, list_h[i].visited = '0';
+		list_h[i].heuristic = 0;
+	}
 
-	all_vertices = graph->vertices;
-	for (; all_vertices; all_vertices = all_vertices->next)
-		all_vertices->x = -1, all_vertices->y = -1;
-
-	path = queue_create();
-	unvisited = queue_create();
-	visited = queue_create();
-
-	visiting = dijkstra_algo((vertex_t *) start, (vertex_t *) target, visited,
-			unvisited, list_ver);
+	(path = queue_create(), unvisited = queue_create(), visited = queue_create());
+	visiting = dijkstra_algo(&(list_h[start->index]), &(list_h[target->index]),
+			visited, unvisited, list_h);
 	if (!visiting)
 	{
-		free_list_unvisited_visited(list_ver, unvisited, visited, path);
+		free_list_unvisited_visited(list_h, unvisited, visited, path);
 		return (NULL);
 	}
 
 	make_path(path, visiting);
-	x = visiting->x;
+	parent = visiting->parent;
 	for (front_q = visited->front; front_q; front_q = front_q->next)
 	{
-		if (((vertex_t *) front_q->ptr)->index == (size_t) x)
+		if (((a_start_t *) front_q->ptr)->index == (size_t) parent)
 		{
-			make_path(path, (vertex_t *) front_q->ptr);
-			x = ((vertex_t *) front_q->ptr)->x;
+			make_path(path, (a_start_t *) front_q->ptr);
+			parent = ((a_start_t *) front_q->ptr)->parent;
 		}
 	}
-
-	free_list_unvisited_visited(list_ver, unvisited, visited, path);
+	free_list_unvisited_visited(list_h, unvisited, visited, path);
 	return (path);
 }
